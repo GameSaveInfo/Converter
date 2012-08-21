@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 using System.Text;
 using System.Xml;
 using GameSaveInfo;
@@ -123,6 +124,7 @@ namespace GSMConverter {
 
             string rel_path = path.InnerText;
             bool linkable = false;
+            bool needs_file_path = false;
             switch (specialpath) {
                 case "%REGISTRY%":
                     reg_root = getRegRoot(reg);
@@ -166,7 +168,7 @@ namespace GSMConverter {
                     linkable = true;
                     break;
                 case "%STEAM%":
-                    if (rel_path.StartsWith("steamapps/common/")) {
+                    if (rel_path.ToLower().StartsWith("steamapps/common/")) {
                         ev = EnvironmentVariable.SteamCommon;
                         rel_path = rel_path.Substring(17).Trim(System.IO.Path.DirectorySeparatorChar);
                     } else if (rel_path.StartsWith("steamapps/sourcemods/")) {
@@ -176,9 +178,16 @@ namespace GSMConverter {
                         throw new NotSupportedException(rel_path);
                     }
                     linkable = true;
+                    needs_file_path = true;
                     break;
                 case "%UPLAY%":
                     ev = EnvironmentVariable.UbisoftSaveStorage;
+                    break;
+                case "":
+                    ev = EnvironmentVariable.Drive;
+                    rel_path = rel_path.Substring(Path.GetPathRoot(rel_path).Length);
+                    linkable = true;
+                    needs_file_path = true;
                     break;
                 default:
                     throw new NotSupportedException(specialpath);
@@ -195,24 +204,30 @@ namespace GSMConverter {
 
             version.addLocation(loc);
 
-            FileType type = version.addFileType("Saves");
+            FileType type = version.addFileType(null);
 
             foreach (string inc in include.Split('|')) {
                 Include save;
+                string add_path = null;
+                if (needs_file_path)
+                    add_path = "";
                 if (inc == "*.*"||inc=="*") {
-                    save = type.addSave(null, null);
+                    save = type.addSave(add_path, null);
                 } else {
-                    save = type.addSave(null, inc);
+                    save = type.addSave(add_path, inc);
                 }
                 foreach (string exc in exclude.Split('|')) {
                     if(exc!="")
-                        save.addExclusion(null, exc);
+                        save.addExclusion(add_path, exc);
                 }
 
             }
 
             if (linkable) {
-                version.addLink(null);
+                if(needs_file_path)
+                    version.addLink("");
+                else
+                    version.addLink(null);
             }
 
         }

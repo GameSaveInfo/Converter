@@ -36,6 +36,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>GSMConverter.App</StartupObject>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -97,19 +100,19 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Libs\GameSave.Info\GameSave.Info.csproj">
+    <ProjectReference Include="..\GameSaveInfo\GameSave.Info.csproj">
       <Project>{937CDE2B-963A-4624-A460-C95676260D35}</Project>
       <Name>GameSave.Info</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Libs\MVC.WPF\MVC.WPF.csproj">
+    <ProjectReference Include="..\MVC.WPF\MVC.WPF.csproj">
       <Project>{521A7BAC-6485-4736-9EB4-77F6BB3EE2BF}</Project>
       <Name>MVC.WPF</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Libs\MVC\MVC.csproj">
+    <ProjectReference Include="..\MVC\MVC.csproj">
       <Project>{4670BE82-DDDF-4614-BE3B-FB5DE4226D93}</Project>
       <Name>MVC</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Libs\XmlData\XmlData.csproj">
+    <ProjectReference Include="..\XmlData\XmlData.csproj">
       <Project>{427B2AD4-31CC-4308-A9AB-5264D4A51A3B}</Project>
       <Name>XmlData</Name>
     </ProjectReference>
