@@ -1,0 +1,33 @@
+[submodule "GameSaveInfo"]
+	path = GameSaveInfo
+	url = https://github.com/GameSaveInfo/Lib.CSharp.git
+[submodule "MVC.WPF"]
+	path = MVC.WPF
+	url = https://github.com/sanmadjack/MVC.WPF.CSharp.git
+[submodule "MVC"]
+	path = MVC
+	url = https://github.com/sanmadjack/MVC.CSharp.git
+[submodule "XmlData"]
+	path = XmlData
+	url = https://github.com/sanmadjack/XmlData.CSharp.git
+[submodule "Email.WPF"]
+	path = Email.WPF
+	url = https://github.com/sanmadjack/Email.WPF.CSharp.git
+[submodule "Email"]
+	path = Email
+	url = https://github.com/sanmadjack/Email.CSharp.git
+[submodule "Translator"]
+	path = Translator
+	url = https://github.com/sanmadjack/Translator.CSharp.git
+[submodule "Translator.WPF"]
+	path = Translator.WPF
+	url = https://github.com/sanmadjack/Translator.WPF.CSharp.git
+[submodule "MVC.Translator"]
+	path = MVC.Translator
+	url = https://github.com/sanmadjack/MVC.Translator.CSharp.git
+[submodule "WPF"]
+	path = WPF
+	url = https://github.com/sanmadjack/WPF.CSharp.git
+[submodule "Logger"]
+	path = Logger
+	url = https://github.com/sanmadjack/Logger.CSharp.git
