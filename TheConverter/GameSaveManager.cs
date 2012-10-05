@@ -171,7 +171,7 @@ namespace GSMConverter {
                     if (rel_path.ToLower().StartsWith("steamapps/common/")) {
                         ev = EnvironmentVariable.SteamCommon;
                         rel_path = rel_path.Substring(17).Trim(System.IO.Path.DirectorySeparatorChar);
-                    } else if (rel_path.StartsWith("steamapps/sourcemods/")) {
+                    } else if (rel_path.ToLower().StartsWith("steamapps/sourcemods/")) {
                         ev = EnvironmentVariable.SteamSourceMods;
                         rel_path = rel_path.Substring(21).Trim(System.IO.Path.DirectorySeparatorChar);
                     } else {
