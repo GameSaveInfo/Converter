@@ -12,6 +12,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Xml;
+using System.Text.RegularExpressions;
 using GameSaveInfo;
 namespace GSMConverter {
     /// <summary>
@@ -22,10 +23,13 @@ namespace GSMConverter {
             InitializeComponent();
         }
 
+        
         AConverter gsm;
         private void GoButton_Click(object sender, RoutedEventArgs e) {
 //            try {
-                gsm = new GameSaveManager(input.Text);
+                String xml = input.Text;
+
+                gsm = new GameSaveManager(xml);
 
                 StringBuilder entries = new StringBuilder();
                 StringBuilder namesses = new StringBuilder();

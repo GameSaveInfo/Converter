@@ -31,3 +31,6 @@
 [submodule "Logger"]
 	path = Logger
 	url = https://github.com/sanmadjack/Logger.CSharp.git
+[submodule "TheConverter/Data"]
+	path = TheConverter/Data
+	url = ../Data.git

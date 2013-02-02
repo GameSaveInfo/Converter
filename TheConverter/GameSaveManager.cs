@@ -9,15 +9,31 @@ namespace GSMConverter {
     class GameSaveManager: AConverter {
 
         public GameSaveManager(string xml): base(xml) {
-            foreach (XmlElement entry in this.DocumentElement.ChildNodes) {
-                if (entry.Name != "entry")
-                    throw new NotSupportedException(entry.Name);
-
+            foreach (XmlNode entry in this.DocumentElement.ChildNodes) {
+                switch (entry.Name) {
+                    case "entry":
+                        break;
+                    default:
+                        throw new NotSupportedException(entry.Name);    
+                }
                 loadEntry(entry);
             }
         }
 
-        private void loadEntry(XmlElement entry) {
+        protected override string CleanUpInput(string input) {
+            input = base.CleanUpInput(input);
+
+            if (input.Contains("&reg;")) {
+                input = input.Replace("&reg;", "®");
+            }
+            if (input.Contains("&trade;")) {
+                input = input.Replace("&trade;", "™");
+            }
+                            
+            return input;
+        }
+
+        private void loadEntry(XmlNode entry) {
             foreach (XmlAttribute attr in entry.Attributes) {
                 switch (attr.Name) {
                     case "new":
@@ -47,6 +63,9 @@ namespace GSMConverter {
                     case "registry":
                         registry = ele;
                         break;
+                    case "lastmodified":
+                        // We don't do anything with this
+                        break;
                     default:
                         throw new NotSupportedException(ele.Name);
                 }
@@ -59,30 +78,23 @@ namespace GSMConverter {
                 output.Add(game);
             }
 
-            if (game.Versions.Count == 0) {
-                GameVersion ver = new GameVersion(game,"Windows",null);
-                game.addVersion(ver);
-            }
-            GameVersion version = game.Versions[0];
-
 
             if(dirs!=null)
-                loadDirectories(dirs,version);
+                loadDirectories(dirs,game);
 
 
             if (registry != null)
-                loadRegistries(registry, version);
+                loadRegistries(registry, game);
 
-            version.addContributor("GameSaveManager");
             
         }
 
 
-        private void loadDirectories(XmlElement dirs, GameVersion version) {
+        private void loadDirectories(XmlElement dirs, Game game) {
             foreach (XmlElement dir in dirs.ChildNodes) {
                 switch (dir.Name) {
                     case "dir":
-                        loadDirectory(dir, version);
+                        loadDirectory(dir, game);
                         break;
                     default:
                         throw new NotSupportedException(dir.Name);
@@ -90,7 +102,7 @@ namespace GSMConverter {
             }
         }
 
-        private void loadDirectory(XmlElement dir, GameVersion version) {
+        private void loadDirectory(XmlElement dir, Game game) {
             XmlElement path = null, reg = null;
             string include = null, exclude = null;
             foreach (XmlElement ele in dir.ChildNodes) {
@@ -192,16 +204,61 @@ namespace GSMConverter {
                 default:
                     throw new NotSupportedException(specialpath);
             }
-
-
+            GameVersion version;
+            String path_prepend = null;
+            rel_path = correctPath(rel_path);
             if(ev!= EnvironmentVariable.None) {
+                switch (ev) {
+                    case EnvironmentVariable.AppData:
+                    case EnvironmentVariable.UserDocuments:
+                    case EnvironmentVariable.CommonApplicationData:
+                    case EnvironmentVariable.Public:
+                    case EnvironmentVariable.SteamCommon:
+                    case EnvironmentVariable.SavedGames:
+                    case EnvironmentVariable.LocalAppData:
+                    case EnvironmentVariable.UserProfile:
+                    case EnvironmentVariable.SteamUser:
+                    case EnvironmentVariable.SteamSourceMods:
+                        if(!game.hasVersion("Windows",null,null))
+                            game.addVersion("Windows",null,null);
+                        version = game.getVersion("Windows",null,null);
+                        break;
+                    case EnvironmentVariable.SteamUserData:
+                        if (!game.hasVersion(null, "SteamCloud", null))
+                            game.addVersion(null, "SteamCloud", null);
+                        version = game.getVersion(null, "SteamCloud", null);
+                        break;
+                    case EnvironmentVariable.UbisoftSaveStorage:
+                        if (!game.hasVersion(null, "UbisoftSaveStorage", null))
+                            game.addVersion(null, "UbisoftSaveStorage", null);
+                        version = game.getVersion(null, "UbisoftSaveStorage", null);
+                        break;
+                    default:
+                        throw new NotSupportedException(ev.ToString());
+                }
+                switch (ev) {
+                    case EnvironmentVariable.SteamUser:
+                    case EnvironmentVariable.SteamCommon:
+                    case EnvironmentVariable.SteamSourceMods:
+                    case EnvironmentVariable.SteamUserData:
+                        if (rel_path.Contains('\\')) {
+                            int index = rel_path.IndexOf('\\');
+                            path_prepend = rel_path.Substring(index+1);
+                            rel_path = rel_path.Substring(0, index);
+                        }
+                        break;
+                }
+
                 loc = new LocationPath(version.Locations,ev, rel_path);
             } else {
-                loc = new LocationRegistry(version.Locations, reg_root.ToString(), reg_key, reg_value);
-                if (rel_path != null && rel_path != "")
-                    loc.Append = rel_path;
-            }
+                if(!game.hasVersion("Windows",null,null))
+                    game.addVersion("Windows",null,null);
+                version = game.getVersion("Windows",null,null);
 
+                loc = new LocationRegistry(version.Locations, reg_root.ToString(), correctReg(reg_key), reg_value);
+                if (rel_path != null && rel_path != "")
+                    path_prepend = correctPath(rel_path);
+            }
             version.addLocation(loc);
 
             FileType type = version.addFileType(null);
@@ -211,25 +268,75 @@ namespace GSMConverter {
                 string add_path = null;
                 if (needs_file_path)
                     add_path = "";
-                if (inc == "*.*"||inc=="*") {
+
+                if (path_prepend != null) {
+                    add_path = path_prepend;
+                }
+
+                string file = correctPath(inc);
+                if (file.Contains('\\')) {
+                    string[] splits = file.Split('\\');
+                    for (int i = 0; i < splits.Length; i++) {
+                        if (i < splits.Length - 1) {
+                            if (add_path != null)
+                                add_path = Path.Combine(add_path, splits[i]);
+                            else
+                                add_path = splits[i];
+                        } else {
+                            file = splits[i];
+                        }
+                    }
+                }
+
+                if (file == "*.*"||file=="*") {
                     save = type.addSave(add_path, null);
                 } else {
-                    save = type.addSave(add_path, inc);
+                    save = type.addSave(add_path, file);
                 }
+
                 foreach (string exc in exclude.Split('|')) {
-                    if(exc!="")
+                    if (exc != "") {
                         save.addExclusion(add_path, exc);
+                    }
                 }
 
             }
 
             if (linkable) {
-                if(needs_file_path)
-                    version.addLink("");
-                else
+                if(path_prepend!=null) {
+                    version.addLink(path_prepend);
+                }else if (needs_file_path) {
+                        version.addLink("");
+                } else
                     version.addLink(null);
             }
 
+            version.addContributor("GameSaveManager");
+
+        }
+        private string correctReg(string path) {
+            if (path.ToLower().Contains("Wow6432Node".ToLower())) {
+                string pth = path.Replace("Wow6432Node", "");
+                if (pth == path)
+                    throw new Exception("replacement didn't affect string");
+                path = pth;
+            }
+
+            path = correctPath(path);
+
+            return path;
+        }
+        private string correctPath(string path) {
+            if (path.Contains('/'))
+                path = path.Replace('/','\\');
+            // Correct doubles
+            if (path.Contains("//"))
+                path = path.Replace("//", "\\");
+
+            if (path.Contains("\\\\"))
+                path = path.Replace("\\\\", "\\");
+
+            return path;
         }
 
         private RegRoot getRegRoot(XmlElement reg) {
@@ -279,18 +386,18 @@ namespace GSMConverter {
             return null;
         }
 
-        private void loadRegistries(XmlElement reg, GameVersion version) {
+        private void loadRegistries(XmlElement reg, Game game) {
             foreach (XmlElement ele in reg.ChildNodes) {
                 switch (ele.Name) {
                     case "reg":
-                        loadRegistry(ele, version);
+                        loadRegistry(ele, game);
                         break;
                     default:
                         throw new NotSupportedException(ele.Name);
                 }
             }
         }
-        private void loadRegistry(XmlElement reg, GameVersion version) {
+        private void loadRegistry(XmlElement reg, Game game) {
             RegRoot root = RegRoot.none;;
             string key = null, values = null;
 
@@ -309,6 +416,11 @@ namespace GSMConverter {
                         throw new NotSupportedException(ele.Name);
                 }
             }
+            
+            if(!game.hasVersion("Windows",null,null))
+                game.addVersion("Windows",null,null);
+
+            GameVersion version = game.getVersion("Windows",null,null);
 
             version.addRegEntry(root, key, values, "Saves");
 
